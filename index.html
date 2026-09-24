@@ -1,0 +1,591 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ClipDeck: save your best gaming moments</title>
+  <meta name="description" content="ClipDeck keeps your last 30 seconds of gameplay ready. Press Alt+F10 and it's a clip. Free download for Windows.">
+  <meta property="og:title" content="ClipDeck">
+  <meta property="og:description" content="Your best gaming moments, one key away. Free for Windows.">
+  <meta property="og:image" content="logo.png">
+  <meta name="theme-color" content="#0b0b14">
+  <link rel="icon" type="image/png" href="logo.png">
+  <style>
+    :root {
+      --bg: #0b0b14;
+      --bg-2: #11111d;
+      --card: rgba(255, 255, 255, 0.045);
+      --card-strong: rgba(255, 255, 255, 0.07);
+      --stroke: rgba(255, 255, 255, 0.09);
+      --text: #f4f4fb;
+      --muted: #a7a7bd;
+      --faint: #6e6e86;
+      --accent: #8b5cf6;
+      --accent-light: #b79cff;
+      --cyan: #22d3ee;
+      --red: #ef4444;
+      --green: #34d399;
+      --grad: linear-gradient(100deg, #a78bfa 0%, #22d3ee 100%);
+      --radius: 18px;
+      --font: "Segoe UI Variable Display", "Segoe UI Variable Text", "Segoe UI", system-ui, -apple-system, "Inter", Roboto, sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      font-family: var(--font);
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.55;
+      -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
+    }
+
+    /* Soft color glows behind everything, like in the app (gradients, not blur: cheap to draw while scrolling) */
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      z-index: -1;
+      pointer-events: none;
+      background:
+        radial-gradient(60vmax 50vmax at 5% -5%, rgba(139, 92, 246, 0.28), transparent 70%),
+        radial-gradient(55vmax 45vmax at 100% 105%, rgba(34, 211, 238, 0.14), transparent 70%);
+    }
+
+    a { color: var(--accent-light); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .wrap { max-width: 1120px; margin: 0 auto; padding: 0 24px; }
+    .grad-text { background: var(--grad); -webkit-background-clip: text; background-clip: text; color: transparent; }
+
+    /* ---------- Nav ---------- */
+    nav {
+      position: sticky; top: 0; z-index: 10;
+      backdrop-filter: blur(14px);
+      background: rgba(11, 11, 20, 0.65);
+      border-bottom: 1px solid var(--stroke);
+    }
+    nav .wrap { display: flex; align-items: center; gap: 28px; height: 64px; }
+    .brand { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 19px; color: var(--text); }
+    .brand:hover { text-decoration: none; }
+    .brand img { width: 30px; height: 30px; border-radius: 8px; }
+    nav .links { display: flex; gap: 22px; margin-left: auto; font-size: 15px; }
+    nav .links a { color: var(--muted); }
+    nav .links a:hover { color: var(--text); text-decoration: none; }
+
+    /* ---------- Buttons ---------- */
+    .btn {
+      display: inline-flex; align-items: center; gap: 10px;
+      padding: 12px 20px; border-radius: 12px;
+      font: 600 15px var(--font); color: var(--text);
+      background: var(--card-strong); border: 1px solid var(--stroke);
+      transition: transform .18s ease, box-shadow .25s ease, background .2s;
+      cursor: pointer;
+    }
+    .btn:hover { text-decoration: none; transform: translateY(-2px); background: rgba(255,255,255,0.1); }
+    .btn-primary {
+      background: var(--grad); color: #0b0b14; border: 0;
+      box-shadow: 0 10px 40px -8px rgba(139, 92, 246, 0.7);
+    }
+    .btn-primary:hover { background: var(--grad); box-shadow: 0 14px 50px -6px rgba(34, 211, 238, 0.7); }
+    .btn-big { padding: 17px 30px; font-size: 18px; border-radius: 15px; }
+    .btn svg { width: 20px; height: 20px; flex: none; }
+    nav .btn { padding: 8px 16px; font-size: 14px; }
+
+    /* ---------- Hero ---------- */
+    .hero { padding: 80px 0 60px; }
+    .hero .wrap { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr); gap: 56px; align-items: center; }
+    .hero .wrap > * { min-width: 0; }
+    .eyebrow {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 6px 14px; border-radius: 999px;
+      background: var(--card); border: 1px solid var(--stroke);
+      color: var(--muted); font-size: 13px;
+    }
+    .eyebrow .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--green); box-shadow: 0 0 10px var(--green); }
+    h1 { font-size: clamp(40px, 6vw, 66px); line-height: 1.04; margin: 20px 0 18px; letter-spacing: -0.02em; }
+    .lead { font-size: 19px; color: var(--muted); max-width: 520px; margin: 0 0 32px; }
+    .lead kbd { font-size: 15px; }
+    .cta { display: flex; flex-wrap: wrap; gap: 14px; align-items: center; }
+    .release-info { margin-top: 16px; font-size: 14px; color: var(--faint); min-height: 22px; }
+    .release-info b { color: var(--muted); font-weight: 600; }
+    .platform-note { margin-top: 10px; font-size: 14px; color: #fbbf24; display: none; }
+
+    kbd {
+      display: inline-block; padding: 2px 9px; margin: 0 2px;
+      border-radius: 8px; border: 1px solid rgba(255,255,255,0.18); border-bottom-width: 3px;
+      background: rgba(255,255,255,0.08); color: var(--text);
+      font: 600 0.9em var(--font);
+    }
+
+    /* ---------- App mockup (drawn, no real screenshots) ---------- */
+    .stage { position: relative; }
+    .window {
+      position: relative;
+      border-radius: 16px; overflow: hidden;
+      background: linear-gradient(160deg, #1d1b2e 0%, #14131f 60%, #10151d 100%);
+      border: 1px solid rgba(255,255,255,0.12);
+      box-shadow: 0 40px 100px -30px rgba(0,0,0,0.9), 0 0 90px -20px rgba(139,92,246,0.55);
+      transform: perspective(1400px) rotateY(-9deg) rotateX(3deg);
+      transition: transform .6s ease;
+    }
+    .stage:hover .window { transform: perspective(1400px) rotateY(-3deg) rotateX(1deg); }
+    .titlebar { display: flex; align-items: center; gap: 8px; height: 36px; padding: 0 14px; font-size: 12px; color: var(--muted); }
+    .titlebar img { width: 16px; height: 16px; border-radius: 4px; }
+    .titlebar .ctl { margin-left: auto; display: flex; gap: 16px; color: var(--faint); letter-spacing: 1px; }
+    .app { display: grid; grid-template-columns: 112px minmax(0, 1fr); min-height: 330px; }
+    .side { padding: 8px; display: flex; flex-direction: column; gap: 4px; }
+    .side div { padding: 7px 10px; border-radius: 7px; font-size: 12px; color: var(--muted); }
+    .side .on { background: rgba(255,255,255,0.07); color: var(--text); box-shadow: inset 3px 0 0 var(--accent-light); }
+    .pane { padding: 10px 14px 16px 6px; display: flex; flex-direction: column; gap: 10px; }
+    .mcard { border-radius: 12px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.07); padding: 14px 16px; }
+    .mcard h3 { margin: 0; font-size: 24px; line-height: 1.1; }
+    .mcard p { margin: 4px 0 10px; font-size: 11px; color: var(--muted); }
+    .pills { display: flex; gap: 6px; flex-wrap: wrap; }
+    .pill { display: inline-flex; align-items: center; gap: 6px; padding: 3px 9px; border-radius: 999px; font-size: 10px; color: var(--muted); background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.08); }
+    .pill .live { width: 7px; height: 7px; border-radius: 50%; background: var(--accent-light); box-shadow: 0 0 8px var(--accent-light); animation: pulse 2s ease-in-out infinite; }
+    .replay { display: flex; align-items: center; gap: 10px; }
+    .replay .txt { flex: 1; }
+    .replay b { font-size: 13px; }
+    .replay span { display: block; font-size: 10px; color: var(--muted); }
+    .toggle { width: 30px; height: 16px; border-radius: 999px; background: var(--accent); position: relative; }
+    .toggle::after { content: ""; position: absolute; right: 3px; top: 3px; width: 10px; height: 10px; border-radius: 50%; background: #0b0b14; }
+    .mbtn { font-size: 10px; font-weight: 600; padding: 5px 9px; border-radius: 7px; background: var(--grad); color: #0b0b14; }
+    .tiles { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+    .tile { border-radius: 10px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.07); padding: 5px; }
+    .thumb { position: relative; aspect-ratio: 16 / 9; border-radius: 7px; overflow: hidden; }
+    .thumb .dur { position: absolute; right: 4px; bottom: 4px; font-size: 8px; font-weight: 700; padding: 1px 5px; border-radius: 4px; background: rgba(0,0,0,0.7); }
+    .thumb .rec { position: absolute; left: 4px; top: 4px; font-size: 7px; font-weight: 700; padding: 1px 5px; border-radius: 4px; background: var(--red); }
+    .t1 { background: radial-gradient(circle at 70% 85%, #fde68a 0 9%, transparent 10%), linear-gradient(180deg, #312e81 0%, #db2777 55%, #f97316 56%, #7c2d12 100%); }
+    .t2 { background: radial-gradient(circle at 30% 40%, rgba(34,211,238,0.9) 0 6%, transparent 7%), repeating-linear-gradient(90deg, transparent 0 18px, rgba(34,211,238,0.15) 18px 19px), linear-gradient(160deg, #042f2e, #0e7490 70%, #164e63); }
+    .t3 { background: linear-gradient(145deg, transparent 0 60%, #14532d 60%), linear-gradient(200deg, #1e3a8a 0%, #60a5fa 45%, #bbf7d0 100%); }
+    .tile .name { font-size: 9px; font-weight: 600; margin: 5px 2px 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .tile .meta { font-size: 8px; color: var(--faint); margin: 0 2px 2px; }
+
+    .float-keys {
+      position: absolute; left: -26px; bottom: 34px;
+      padding: 12px 16px; border-radius: 14px;
+      background: rgba(20, 19, 31, 0.92); border: 1px solid rgba(255,255,255,0.14);
+      box-shadow: 0 20px 50px -10px rgba(0,0,0,0.8);
+      font-size: 18px; animation: bob 5s ease-in-out infinite;
+    }
+    .float-keys small { display: block; font-size: 11px; color: var(--muted); margin-top: 6px; }
+    .toast {
+      position: absolute; right: -14px; top: 64px;
+      display: flex; align-items: center; gap: 10px;
+      padding: 11px 15px; border-radius: 12px;
+      background: rgba(20, 19, 31, 0.95); border: 1px solid rgba(52, 211, 153, 0.35);
+      box-shadow: 0 20px 50px -10px rgba(0,0,0,0.8), 0 0 30px -8px rgba(52,211,153,0.5);
+      font-size: 13px; animation: toast 6s ease-in-out infinite;
+    }
+    .toast .ok { width: 22px; height: 22px; border-radius: 50%; background: var(--green); color: #052e1c; display: grid; place-items: center; font-weight: 900; font-size: 13px; }
+    .toast small { display: block; color: var(--muted); font-size: 11px; }
+
+    @keyframes pulse { 50% { opacity: .45; } }
+    @keyframes bob { 50% { transform: translateY(-8px); } }
+    @keyframes toast { 0%, 12% { opacity: 0; transform: translateY(8px); } 20%, 80% { opacity: 1; transform: none; } 92%, 100% { opacity: 0; transform: translateY(-6px); } }
+
+    /* ---------- Sections ---------- */
+    section { padding: 70px 0; }
+    .section-head { text-align: center; max-width: 640px; margin: 0 auto 44px; }
+    .section-head h2 { font-size: clamp(30px, 4vw, 42px); margin: 0 0 12px; letter-spacing: -0.015em; }
+    .section-head p { color: var(--muted); margin: 0; font-size: 17px; }
+
+    .keystrip {
+      display: flex; justify-content: center; align-items: center; flex-wrap: wrap; gap: 14px 36px;
+      padding: 26px; border-radius: var(--radius);
+      background: var(--card); border: 1px solid var(--stroke);
+      font-size: 17px; color: var(--muted);
+    }
+    .keystrip div { display: flex; align-items: center; gap: 10px; }
+    .keystrip kbd { font-size: 16px; }
+
+    .features { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
+    .feature {
+      position: relative; padding: 26px; border-radius: var(--radius);
+      background: var(--card); border: 1px solid var(--stroke);
+      transition: transform .25s ease, border-color .25s ease, box-shadow .3s ease;
+    }
+    .feature:hover { transform: translateY(-4px); border-color: rgba(183,156,255,0.5); box-shadow: 0 20px 60px -25px rgba(139,92,246,0.7); }
+    .feature .icon {
+      width: 44px; height: 44px; border-radius: 12px; display: grid; place-items: center;
+      background: linear-gradient(135deg, rgba(167,139,250,0.22), rgba(34,211,238,0.18));
+      border: 1px solid rgba(255,255,255,0.1); margin-bottom: 16px;
+    }
+    .feature .icon svg { width: 22px; height: 22px; stroke: var(--accent-light); }
+    .feature h3 { margin: 0 0 6px; font-size: 18px; }
+    .feature p { margin: 0; color: var(--muted); font-size: 15px; }
+
+    /* Install steps */
+    .steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; counter-reset: step; }
+    .step { padding: 26px; border-radius: var(--radius); background: var(--card); border: 1px solid var(--stroke); }
+    .step::before {
+      counter-increment: step; content: counter(step);
+      display: grid; place-items: center; width: 36px; height: 36px; border-radius: 50%;
+      background: var(--grad); color: #0b0b14; font-weight: 800; margin-bottom: 14px;
+    }
+    .step h3 { margin: 0 0 6px; font-size: 18px; }
+    .step p { margin: 0; color: var(--muted); font-size: 15px; }
+
+    .smartscreen { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin-top: 22px; }
+    .ss {
+      border-radius: 14px; overflow: hidden; background: #1f5fa8;
+      box-shadow: 0 20px 50px -20px rgba(0,0,0,0.9);
+      color: #fff; font-family: "Segoe UI", system-ui, sans-serif;
+    }
+    .ss .ss-body { padding: 22px 24px 16px; min-height: 176px; }
+    .ss .ss-title { font-size: 22px; font-weight: 300; margin-bottom: 10px; }
+    .ss .ss-text { font-size: 13px; opacity: .92; }
+    .ss .ss-link { display: inline-block; margin-top: 12px; font-size: 13px; text-decoration: underline; position: relative; }
+    .ss .ss-foot { display: flex; justify-content: flex-end; gap: 8px; padding: 12px 16px; background: rgba(0,0,0,0.18); }
+    .ss .ss-btn { font-size: 13px; padding: 6px 18px; border: 1px solid rgba(255,255,255,0.6); position: relative; }
+    .hl { outline: 3px solid #fbbf24; outline-offset: 4px; border-radius: 4px; animation: glow 1.6s ease-in-out infinite; }
+    @keyframes glow { 50% { outline-color: rgba(251,191,36,0.35); } }
+    .ss-caption { margin: 10px 4px 0; font-size: 14px; color: var(--muted); }
+    .ss-caption b { color: var(--text); }
+    .de { color: var(--faint); font-size: 13px; }
+
+    /* Hotkeys + FAQ */
+    .two { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; align-items: start; }
+    .panel { padding: 26px; border-radius: var(--radius); background: var(--card); border: 1px solid var(--stroke); }
+    .panel h3 { margin: 0 0 14px; font-size: 19px; }
+    .keys-table { width: 100%; border-collapse: collapse; font-size: 15px; }
+    .keys-table td { padding: 10px 0; border-bottom: 1px solid var(--stroke); vertical-align: top; }
+    .keys-table tr:last-child td { border-bottom: 0; }
+    .keys-table td:first-child { white-space: nowrap; padding-right: 16px; width: 1%; }
+    .keys-table td:last-child { color: var(--muted); }
+    .panel ul { margin: 0; padding-left: 18px; color: var(--muted); }
+    .panel li { margin: 6px 0; }
+
+    details { border-bottom: 1px solid var(--stroke); padding: 4px 0; }
+    details:last-child { border-bottom: 0; }
+    summary { cursor: pointer; list-style: none; padding: 12px 28px 12px 0; font-weight: 600; position: relative; }
+    summary::-webkit-details-marker { display: none; }
+    summary::after { content: "+"; position: absolute; right: 4px; top: 8px; font-size: 22px; color: var(--accent-light); transition: transform .2s; }
+    details[open] summary::after { transform: rotate(45deg); }
+    details p { margin: 0 0 14px; color: var(--muted); font-size: 15px; }
+
+    /* Final CTA + footer */
+    .final {
+      text-align: center; padding: 56px 24px; border-radius: 24px;
+      background: radial-gradient(ellipse at top, rgba(139,92,246,0.28), transparent 70%), var(--card);
+      border: 1px solid var(--stroke);
+    }
+    .final h2 { font-size: clamp(28px, 4vw, 40px); margin: 0 0 10px; }
+    .final p { color: var(--muted); margin: 0 0 26px; }
+    footer { padding: 40px 0 60px; color: var(--faint); font-size: 13px; text-align: center; }
+    footer p { margin: 6px 0; }
+
+    /* ---------- Small screens ---------- */
+    @media (max-width: 900px) {
+      .hero { padding-top: 48px; }
+      .hero .wrap, .two, .smartscreen { grid-template-columns: minmax(0, 1fr); }
+      .features, .steps { grid-template-columns: 1fr 1fr; }
+      .window { transform: none; }
+      .stage:hover .window { transform: none; }
+      .float-keys { left: 8px; bottom: -22px; }
+      .toast { right: 8px; }
+      nav .links { display: none; }
+      nav .btn { margin-left: auto; }
+    }
+    @media (max-width: 600px) {
+      .features, .steps { grid-template-columns: 1fr; }
+      .app { grid-template-columns: minmax(0, 1fr); }
+      .side { display: none; }
+      .pane { padding: 10px 14px 16px; }
+      .toast { top: 44px; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation: none !important; transition: none !important; }
+      html { scroll-behavior: auto; }
+    }
+  </style>
+</head>
+<body>
+
+<nav>
+  <div class="wrap">
+    <a class="brand" href="#"><img src="logo.png" alt="">ClipDeck</a>
+    <div class="links">
+      <a href="#features">Features</a>
+      <a href="#install">Install</a>
+      <a href="#faq">FAQ</a>
+    </div>
+    <a class="btn btn-primary js-download" href="https://github.com/TheLeb/Clipdeck-Release/releases/latest/download/ClipDeck-win-Setup.exe">Download</a>
+  </div>
+</nav>
+
+<header class="hero">
+  <div class="wrap">
+    <div>
+      <span class="eyebrow"><span class="dot"></span>Free for Windows 10 &amp; 11</span>
+      <h1>Your best moments,<br><span class="grad-text">one key away.</span></h1>
+      <p class="lead">
+        ClipDeck always keeps the last 30 seconds of your game ready. Hit <kbd>Alt</kbd>+<kbd>F10</kbd> and
+        that clutch play is saved as a clip. No lag, no hassle, no account.
+      </p>
+      <div class="cta">
+        <a class="btn btn-primary btn-big js-download" href="https://github.com/TheLeb/Clipdeck-Release/releases/latest/download/ClipDeck-win-Setup.exe">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg>
+          Download for Windows
+        </a>
+        <a class="btn" href="#install">How to install</a>
+      </div>
+      <div class="release-info js-release">Windows 10 (1903+) or 11 · 64-bit</div>
+      <div class="platform-note js-platform">Heads-up: ClipDeck is a Windows app. Open this page on your gaming PC to download it.</div>
+    </div>
+
+    <div class="stage" aria-hidden="true">
+      <div class="window">
+        <div class="titlebar"><img src="logo.png" alt="">ClipDeck<span class="ctl">–&nbsp;&nbsp;▢&nbsp;&nbsp;✕</span></div>
+        <div class="app">
+          <div class="side">
+            <div class="on">⌂&nbsp; Home</div>
+            <div>▶&nbsp; Clips</div>
+            <div>⚙&nbsp; Settings</div>
+          </div>
+          <div class="pane">
+            <div class="mcard">
+              <h3 class="grad-text">ClipDeck</h3>
+              <p>Your last 30 seconds of gameplay, one hotkey away.</p>
+              <div class="pills">
+                <span class="pill"><span class="live"></span>Replay buffer on</span>
+                <span class="pill">⚡ 0.6 % CPU</span>
+              </div>
+            </div>
+            <div class="mcard replay">
+              <div class="txt"><b>Instant replay</b><span>Press Alt+F10 to save the last 30 seconds.</span></div>
+              <div class="toggle"></div>
+              <div class="mbtn">Save clip</div>
+            </div>
+            <div class="tiles">
+              <div class="tile"><div class="thumb t1"><span class="dur">0:32</span></div><div class="name">Clutch 1v4</div><div class="meta">Today 21:04</div></div>
+              <div class="tile"><div class="thumb t2"><span class="dur">0:30</span></div><div class="name">Insane flick</div><div class="meta">Today 20:47</div></div>
+              <div class="tile"><div class="thumb t3"><span class="rec">REC</span><span class="dur">12:08</span></div><div class="name">Ranked session</div><div class="meta">Yesterday</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="toast"><span class="ok">✓</span><div>Clip saved<small>0:32 · 19.7 MB</small></div></div>
+      <div class="float-keys"><kbd>Alt</kbd> + <kbd>F10</kbd><small>saves the last 30 s</small></div>
+    </div>
+  </div>
+</header>
+
+<main>
+  <div class="wrap">
+    <div class="keystrip">
+      <div><kbd>Alt</kbd>+<kbd>F10</kbd> save a clip</div>
+      <div><kbd>Alt</kbd>+<kbd>F9</kbd> start / stop recording</div>
+      <div>🔊 a short sound confirms it, even in-game</div>
+    </div>
+  </div>
+
+  <section id="features">
+    <div class="wrap">
+      <div class="section-head">
+        <h2>Everything a clipper needs.<br><span class="grad-text">Nothing it doesn't.</span></h2>
+        <p>Made to run all the time without you noticing, until you need it.</p>
+      </div>
+      <div class="features">
+        <div class="feature">
+          <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/><path d="M12 7v5l3 2"/></svg></div>
+          <h3>Instant replay</h3>
+          <p>Always keeps your last 15 seconds to 2 minutes. One key turns them into a clip, instantly.</p>
+        </div>
+        <div class="feature">
+          <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4"/></svg></div>
+          <h3>Full recordings</h3>
+          <p>Record a whole session, a screen or just one window, with game sound and your mic if you want.</p>
+        </div>
+        <div class="feature">
+          <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3v12a3 3 0 1 0 3 3V7h10"/><circle cx="18" cy="18" r="3"/><path d="M21 7H9"/></svg></div>
+          <h3>Gallery &amp; trim</h3>
+          <p>Browse your clips, cut them to the best part, rename or delete. Frame-exact trimming.</p>
+        </div>
+        <div class="feature">
+          <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/></svg></div>
+          <h3>Share in seconds</h3>
+          <p>Copy a clip and paste it into Discord with Ctrl+V, or send it straight to a channel, shrunk to fit.</p>
+        </div>
+        <div class="feature">
+          <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 3 14h9l-1 8 10-12h-9z"/></svg></div>
+          <h3>Light on your PC</h3>
+          <p>Records on your graphics card (NVIDIA, AMD or Intel), so your game keeps its frame rate.</p>
+        </div>
+        <div class="feature">
+          <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 0 1-15.5 6.2"/><path d="M3 12A9 9 0 0 1 18.5 5.8"/><path d="M18 2v4h-4"/><path d="M6 22v-4h4"/></svg></div>
+          <h3>Updates itself</h3>
+          <p>New versions arrive quietly in the background and install the next time ClipDeck starts.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="install">
+    <div class="wrap">
+      <div class="section-head">
+        <h2>Installed in <span class="grad-text">under a minute</span></h2>
+        <p>No admin rights, no account, nothing else to install.</p>
+      </div>
+      <div class="steps">
+        <div class="step">
+          <h3>Download</h3>
+          <p>Get <b>ClipDeck-win-Setup.exe</b> with the button above.</p>
+        </div>
+        <div class="step">
+          <h3>Run it</h3>
+          <p>Windows may show a blue box first: just click <b>More info → Run anyway</b> (see below).</p>
+        </div>
+        <div class="step">
+          <h3>Play</h3>
+          <p>ClipDeck opens, then waits in the tray next to the clock and starts with Windows. Press <kbd>Alt</kbd>+<kbd>F10</kbd> anytime.</p>
+        </div>
+      </div>
+
+      <div class="smartscreen" aria-label="How to get past the Windows SmartScreen warning">
+        <div>
+          <div class="ss">
+            <div class="ss-body">
+              <div class="ss-title">Windows protected your PC</div>
+              <div class="ss-text">Microsoft Defender SmartScreen prevented an unrecognized app from starting. Running this app might put your PC at risk.</div>
+              <span class="ss-link hl">More info</span>
+            </div>
+            <div class="ss-foot"><span class="ss-btn">Don't run</span></div>
+          </div>
+          <p class="ss-caption"><b>1.</b> Click <b>More info</b> <span class="de">(Weitere Informationen)</span></p>
+        </div>
+        <div>
+          <div class="ss">
+            <div class="ss-body">
+              <div class="ss-title">Windows protected your PC</div>
+              <div class="ss-text">App: ClipDeck-win-Setup.exe<br>Publisher: Unknown publisher</div>
+            </div>
+            <div class="ss-foot"><span class="ss-btn hl">Run anyway</span><span class="ss-btn">Don't run</span></div>
+          </div>
+          <p class="ss-caption"><b>2.</b> Click <b>Run anyway</b> <span class="de">(Trotzdem ausführen)</span></p>
+        </div>
+      </div>
+      <p class="ss-caption" style="text-align:center; margin-top:18px">
+        Why? Windows warns about every app that isn't signed with a paid certificate. It's only a warning.
+      </p>
+    </div>
+  </section>
+
+  <section id="faq">
+    <div class="wrap two">
+      <div class="panel">
+        <h3>Good to know</h3>
+        <table class="keys-table">
+          <tr><td><kbd>Alt</kbd>+<kbd>F10</kbd></td><td>Save the last 30 seconds as a clip</td></tr>
+          <tr><td><kbd>Alt</kbd>+<kbd>F9</kbd></td><td>Start / stop a recording</td></tr>
+          <tr><td>📁 Clips</td><td>Saved in <b>Videos\ClipDeck</b></td></tr>
+          <tr><td>⚙ Settings</td><td>Change keys, clip length (15 s – 2 min), quality, frame rate, sound, mic and colors</td></tr>
+        </table>
+        <h3 style="margin-top:26px">Tips</h3>
+        <ul>
+          <li>Games in <b>borderless or windowed</b> mode work best.</li>
+          <li>Keep your graphics driver up to date. NVIDIA: driver 610 or newer lets ClipDeck record on the graphics card.</li>
+          <li>The small gauge on the Home page shows how much ClipDeck uses right now.</li>
+        </ul>
+      </div>
+      <div class="panel">
+        <h3>FAQ</h3>
+        <details>
+          <summary>Is it safe? Why does Windows warn me?</summary>
+          <p>Windows shows that warning for every app that isn't signed with a paid code-signing certificate. ClipDeck
+          is a small project for friends, so it isn't. It needs no admin rights and installs only for your user.</p>
+        </details>
+        <details>
+          <summary>Does it slow down my games?</summary>
+          <p>Hardly. The video is encoded on your graphics card, and ClipDeck itself typically uses around 1 % of the CPU
+          while it keeps your last seconds ready.</p>
+        </details>
+        <details>
+          <summary>Does it upload anything?</summary>
+          <p>No. Everything stays on your PC. ClipDeck only goes online to check for updates, and to send a clip to Discord
+          if you ask it to.</p>
+        </details>
+        <details>
+          <summary>How do I update?</summary>
+          <p>You don't have to. ClipDeck downloads new versions by itself and installs them the next time it starts.</p>
+        </details>
+        <details>
+          <summary>How do I uninstall it?</summary>
+          <p>Windows Settings → Apps → Installed apps → ClipDeck → Uninstall. Your clips stay in Videos\ClipDeck.</p>
+        </details>
+        <details>
+          <summary>Something doesn't work</summary>
+          <p>Open ClipDeck → Settings → About → Logs and send the newest file to whoever shared ClipDeck with you.</p>
+        </details>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="wrap">
+      <div class="final">
+        <h2>Never miss <span class="grad-text">that play</span> again.</h2>
+        <p class="js-release-short">Free · Windows 10 &amp; 11 · 64-bit</p>
+        <a class="btn btn-primary btn-big js-download" href="https://github.com/TheLeb/Clipdeck-Release/releases/latest/download/ClipDeck-win-Setup.exe">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg>
+          Download ClipDeck
+        </a>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <p><a href="https://github.com/TheLeb/Clipdeck-Release/releases">All versions &amp; release notes</a></p>
+    <p>ClipDeck uses <a href="https://ffmpeg.org">FFmpeg</a> for video (GPL: license in the install folder,
+      source: <a href="https://github.com/FFmpeg/FFmpeg/tree/n9.0.2">FFmpeg n9.0.2</a>, built by
+      <a href="https://github.com/BtbN/FFmpeg-Builds">BtbN</a>).</p>
+    <p>Made for friends.</p>
+  </div>
+</footer>
+
+<script>
+  // Fills in the newest version, its date and download size straight from GitHub, so this page never
+  // needs editing for a new release. If GitHub can't be reached, the buttons still point at the latest installer.
+  (function () {
+    var repo = 'TheLeb/Clipdeck-Release';
+    var setupName = 'ClipDeck-win-Setup.exe';
+    var info = document.querySelector('.js-release');
+    var short = document.querySelector('.js-release-short');
+
+    if (!/Windows/i.test(navigator.userAgent)) {
+      document.querySelector('.js-platform').style.display = 'block';
+    }
+
+    fetch('https://api.github.com/repos/' + repo + '/releases/latest', { headers: { Accept: 'application/vnd.github+json' } })
+      .then(function (response) {
+        if (response.status === 404) { throw new Error('no-release'); }
+        if (!response.ok) { throw new Error('unavailable'); }
+        return response.json();
+      })
+      .then(function (release) {
+        var asset = (release.assets || []).filter(function (a) { return a.name === setupName; })[0];
+        var version = (release.tag_name || '').replace(/^v/, '');
+        var date = new Date(release.published_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+        var size = asset ? Math.round(asset.size / 1048576) + ' MB' : '';
+        if (asset) {
+          document.querySelectorAll('.js-download').forEach(function (a) { a.href = asset.browser_download_url; });
+        }
+        info.innerHTML = '<b>Version ' + version + '</b> · ' + date + (size ? ' · ' + size : '') + ' · Windows 10 &amp; 11, 64-bit';
+        short.textContent = 'Version ' + version + ' · Free · Windows 10 & 11';
+      })
+      .catch(function (error) {
+        if (error.message === 'no-release') {
+          info.innerHTML = '<b>The first version is on its way.</b> Check back soon!';
+          document.querySelectorAll('.js-download').forEach(function (a) {
+            a.href = 'https://github.com/' + repo + '/releases';
+          });
+        }
+      });
+  })();
+</script>
+</body>
+</html>
