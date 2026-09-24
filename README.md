@@ -1,6 +1,6 @@
 # ClipDeck
 
-### ⬇️ [Download page: theleb.github.io/Clipdeck-Release](https://theleb.github.io/Clipdeck-Release/)
+### ⬇️ [Download page: theleb.github.io/ClipDeck-Release](https://theleb.github.io/ClipDeck-Release/)
 
 **Save your best gaming moments with one key.** ClipDeck keeps the last 30 seconds of your screen and
 sound ready at all times. Press **Alt+F10** and they're saved as a clip. That's it.
@@ -8,7 +8,7 @@ sound ready at all times. Press **Alt+F10** and they're saved as a clip. That's 
 ## Install
 
 1. Download **`ClipDeck-win-Setup.exe`** from the
-   [latest release](https://github.com/TheLeb/Clipdeck-Release/releases/latest) (under "Assets").
+   [latest release](https://github.com/TheLeb/ClipDeck-Release/releases/latest) (under "Assets").
 2. Run it.
 3. Windows will probably show a blue box: **"Windows protected your PC"**. That's SmartScreen being
    careful with apps that aren't signed with a paid certificate. Click **More info**
