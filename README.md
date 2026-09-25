@@ -57,5 +57,5 @@ Send the newest log file from **Settings → About → Logs** to the person who 
 ---
 
 ClipDeck uses [FFmpeg](https://ffmpeg.org) for video (GPL license: `ffmpeg\LICENSE.txt` in the install
-folder; source code: [FFmpeg n9.0.2](https://github.com/FFmpeg/FFmpeg/tree/n9.0.2), built by
+folder; source code: [FFmpeg n8.1.3](https://github.com/FFmpeg/FFmpeg/tree/n8.1.3), built by
 [BtbN/FFmpeg-Builds](https://github.com/BtbN/FFmpeg-Builds)).
