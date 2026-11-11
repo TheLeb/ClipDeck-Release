@@ -2,13 +2,13 @@
 
 importer="wav"
 type="AudioStreamWAV"
-uid="uid://difigfft0qtql"
-path="res://.godot/imported/clash.wav-86aca3adb8757357dda7a97fc0419344.sample"
+uid="uid://105ogvq27hgr"
+path="res://.godot/imported/dash.wav-ce142ca535368506390abc631f4a13c7.sample"
 
 [deps]
 
-source_file="res://assets/sfx/clash.wav"
-dest_files=["res://.godot/imported/clash.wav-86aca3adb8757357dda7a97fc0419344.sample"]
+source_file="res://assets/sfx/dash.wav"
+dest_files=["res://.godot/imported/dash.wav-ce142ca535368506390abc631f4a13c7.sample"]
 
 [params]
 

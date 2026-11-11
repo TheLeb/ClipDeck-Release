@@ -9,6 +9,13 @@ const Background = preload("res://scripts/background.gd")
 
 const SAVE_PATH := "user://orbit_save.cfg"
 const JOY_RADIUS := 90.0
+const HINT_SECONDS := 5.0
+const HINTS: Array[String] = [
+	"Collect stardust to grow moons",
+	"Hit other planets with your moons",
+	"No moons left? One more hit pops them!",
+	"Tap DASH to zoom past their moons",
+]
 
 enum State { MENU, PLAYING, GAME_OVER }
 
@@ -22,11 +29,13 @@ var skin := 0
 var best := 0
 var sound_on := true
 var revive_used := false
+var rounds_played := 0
 
 var _touch_id := -1
 var _joy_origin := Vector2.ZERO
 var _joy_dir := Vector2.ZERO
 var _hud_timer := 0.0
+var _round_time := 0.0
 
 
 func _ready() -> void:
@@ -69,18 +78,26 @@ func _process(delta: float) -> void:
 		return
 	var keys := Input.get_vector("ui_left", "ui_right", "ui_up", "ui_down")
 	world.move_input = keys if keys != Vector2.ZERO else _joy_dir
+	ui.set_dash(1.0 - world.player.dash_cd / C.DASH_COOLDOWN)
+	_round_time += delta
+	var tip := int(_round_time / HINT_SECONDS)
+	ui.set_hint(HINTS[tip] if rounds_played <= 3 and tip < HINTS.size() else "")
 	_hud_timer -= delta
 	if _hud_timer <= 0.0:
 		_hud_timer = 0.15
 		ui.update_hud(world.player, world.leaderboard())
 
 
-## Floating joystick: touch anywhere, drag to steer.
+## Floating joystick: touch anywhere, drag to steer. DASH button or Space to dash.
 func _input(event: InputEvent) -> void:
 	if state != State.PLAYING:
 		return
-	if event is InputEventScreenTouch:
-		if event.pressed and _touch_id == -1:
+	if event.is_action_pressed("ui_accept"):
+		world.dash_player()
+	elif event is InputEventScreenTouch:
+		if event.pressed and ui.dash_hit(event.position):
+			world.dash_player()
+		elif event.pressed and _touch_id == -1:
 			_touch_id = event.index
 			_joy_origin = event.position
 			_joy_dir = Vector2.ZERO
@@ -107,6 +124,9 @@ func _release_joystick() -> void:
 
 func _start_game() -> void:
 	revive_used = false
+	rounds_played += 1
+	_round_time = 0.0
+	_save()
 	world.spawn_player(player_name, C.SKINS[skin])
 	state = State.PLAYING
 	_hud_timer = 0.0
@@ -188,6 +208,7 @@ func _load() -> void:
 	skin = clampi(int(cfg.get_value("player", "skin", skin)), 0, C.SKINS.size() - 1)
 	best = int(cfg.get_value("player", "best", 0))
 	sound_on = bool(cfg.get_value("player", "sound", true))
+	rounds_played = int(cfg.get_value("player", "rounds", 0))
 
 
 func _save() -> void:
@@ -196,6 +217,7 @@ func _save() -> void:
 	cfg.set_value("player", "skin", skin)
 	cfg.set_value("player", "best", best)
 	cfg.set_value("player", "sound", sound_on)
+	cfg.set_value("player", "rounds", rounds_played)
 	cfg.save(SAVE_PATH)
 
 

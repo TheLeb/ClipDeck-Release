@@ -18,7 +18,9 @@ var score := 0
 var dust_progress := 0
 var shield := 0.0
 var respawn_timer := 0.0
-var clash_cd := 0.0
+var dash_t := 0.0                # > 0 while dashing
+var dash_cd := 0.0               # > 0 while dash is recharging
+var dash_dir := Vector2.RIGHT
 
 var orbit_angle := 0.0
 var moon_ang: Array[float] = []   # each moon's slot on the ring
@@ -38,6 +40,7 @@ var think_t := 0.0
 var aggression := 0.5
 var chase_t := 0.0
 var chase_cd := 0.0
+var want_dash := false
 
 var moons: int:
 	get:
@@ -83,9 +86,24 @@ func set_moons(n: int) -> void:
 	refresh_moon_pos()
 
 
+## Start a dash in the direction we are steering (or facing). False if recharging.
+func try_dash() -> bool:
+	if not alive or dash_cd > 0.0:
+		return false
+	dash_dir = input_dir.normalized() if input_dir.length() > 0.2 else look.normalized()
+	dash_t = C.DASH_TIME
+	dash_cd = C.DASH_COOLDOWN
+	return true
+
+
 func tick(delta: float) -> void:
-	var target := input_dir.limit_length(1.0) * max_speed()
-	vel = vel.lerp(target, 1.0 - exp(-7.0 * delta))
+	dash_cd = maxf(0.0, dash_cd - delta)
+	if dash_t > 0.0:
+		dash_t -= delta
+		vel = dash_dir * C.DASH_SPEED
+	else:
+		var target := input_dir.limit_length(1.0) * max_speed()
+		vel = vel.lerp(target, 1.0 - exp(-7.0 * delta))
 	knock = knock.lerp(Vector2.ZERO, 1.0 - exp(-5.0 * delta))
 	pos += (vel + knock) * delta
 	var limit := C.ARENA_RADIUS - radius
@@ -102,7 +120,6 @@ func tick(delta: float) -> void:
 		moon_scale[k] = move_toward(moon_scale[k], 1.0, delta * 5.0)
 
 	shield = maxf(0.0, shield - delta)
-	clash_cd = maxf(0.0, clash_cd - delta)
 	squash = maxf(0.0, squash - delta * 2.5)
 	if vel.length() > 20.0:
 		look = look.lerp(vel.normalized(), 1.0 - exp(-8.0 * delta))

@@ -1,7 +1,7 @@
 extends Node
 ## Tiny sound player:  Sfx.play("pickup")
 
-const SOUNDS := ["pickup", "moon", "hit", "clash", "pop", "click", "start", "over"]
+const SOUNDS := ["pickup", "moon", "hit", "dash", "pop", "click", "start", "over"]
 
 var muted := false
 var _streams := {}

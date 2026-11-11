@@ -22,6 +22,11 @@ const RING_BASE_GAP := 40.0       # distance from planet edge to the moon ring
 const RING_GAP_PER_MOON := 9.0    # the ring gets wider with every moon
 const MOON_LINEAR_SPEED := 230.0  # how fast moons travel around the ring
 
+# ---- Dash ----
+const DASH_SPEED := 760.0
+const DASH_TIME := 0.28           # seconds of zooming; nothing can hit you meanwhile
+const DASH_COOLDOWN := 2.5        # seconds before you can dash again
+
 # ---- Fighting ----
 const HIT_SHIELD_TIME := 0.7      # safe time after being bumped
 const SPAWN_SHIELD_TIME := 3.0    # safe time after (re)spawning

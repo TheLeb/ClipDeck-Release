@@ -26,6 +26,7 @@ var texts: Array[Dictionary] = []
 var cam: Camera2D
 var time := 0.0
 var shake := 0.0
+var leader: Planet = null         # top of the leaderboard, wears the crown
 var _rng := RandomNumberGenerator.new()
 
 
@@ -78,6 +79,14 @@ func remove_player() -> void:
 	move_input = Vector2.ZERO
 
 
+## Player pressed DASH. Returns false while it is still recharging.
+func dash_player() -> bool:
+	if player == null or not player.try_dash():
+		return false
+	Sfx.play("dash")
+	return true
+
+
 ## Alive planets, best score first.
 func leaderboard() -> Array[Planet]:
 	var list: Array[Planet] = []
@@ -115,7 +124,19 @@ func _step(delta: float) -> void:
 				p.think_t = 0.2
 				Bot.think(p, self)
 			p.input_dir = p.input_dir.lerp(p.steer, 1.0 - exp(-6.0 * delta))
+			if p.want_dash:
+				p.want_dash = false
+				p.input_dir = p.steer
+				if p.try_dash() and _on_screen(p.pos):
+					Sfx.play("dash", 1.1, -10.0)
 		p.tick(delta)
+		if p.dash_t > 0.0 and _on_screen(p.pos):
+			particles.append({
+				"pos": p.pos - p.dash_dir * p.radius, "vel": Vector2.ZERO,
+				"color": p.color.lightened(0.3), "life": 0.3, "max": 0.3, "size": p.radius * 0.7,
+			})
+		if leader == null or not leader.alive or p.score > leader.score:
+			leader = p
 
 	_collect_dust(delta)
 	_update_loose(delta)
@@ -201,7 +222,7 @@ func _fight(a: Planet, b: Planet) -> void:
 	if d > a.ring_r + b.ring_r + C.MOON_RADIUS * 2.0 + 4.0:
 		return
 
-	# Planets bounce off each other.
+	# Planets bounce off each other. (Moons pass through other moons.)
 	if d < a.radius + b.radius and d > 0.01:
 		var n := (b.pos - a.pos) / d
 		var overlap := a.radius + b.radius - d
@@ -213,34 +234,10 @@ func _fight(a: Planet, b: Planet) -> void:
 	# A moon touching a planet bumps it.
 	_moons_hit_planet(a, b)
 	_moons_hit_planet(b, a)
-	if not (a.alive and b.alive):
-		return
-
-	# Two moons touching knock each other loose.
-	if a.clash_cd > 0.0 or b.clash_cd > 0.0:
-		return
-	var touch := C.MOON_RADIUS * 2.0
-	for i in a.moons:
-		for j in b.moons:
-			if a.moon_pos[i].distance_to(b.moon_pos[j]) < touch:
-				var mid := (a.moon_pos[i] + b.moon_pos[j]) * 0.5
-				var push := (b.pos - a.pos).normalized().orthogonal()
-				_drop_moon(a.moon_pos[i], push * 230.0, a.color)
-				_drop_moon(b.moon_pos[j], -push * 230.0, b.color)
-				a.remove_moon(i)
-				b.remove_moon(j)
-				a.clash_cd = 0.18
-				b.clash_cd = 0.18
-				_burst(mid, Color.WHITE, 8, 200.0)
-				if _on_screen(mid):
-					Sfx.play("clash", _rng.randf_range(0.9, 1.2), -4.0)
-				if a.is_player or b.is_player:
-					shake = maxf(shake, 5.0)
-				return
 
 
 func _moons_hit_planet(attacker: Planet, victim: Planet) -> void:
-	if victim.shield > 0.0 or not attacker.alive or not victim.alive:
+	if victim.shield > 0.0 or victim.dash_t > 0.0 or not attacker.alive or not victim.alive:
 		return
 	var reach := C.MOON_RADIUS + victim.radius
 	for i in attacker.moons:
@@ -265,7 +262,9 @@ func _bump(victim: Planet, attacker: Planet, at: Vector2) -> void:
 	victim.shield = C.HIT_SHIELD_TIME
 	attacker.score += C.SCORE_HIT
 	if attacker.is_player:
-		_float_text(at, "+%d" % C.SCORE_HIT, Color.WHITE)
+		_float_text(at, "Hit! +%d" % C.SCORE_HIT, Color.WHITE)
+	elif victim.is_player:
+		_float_text(victim.pos + Vector2(0, -victim.radius - 40.0), "Ouch! -1 moon", Color("ff9ec4"))
 	if _on_screen(at):
 		Sfx.play("hit", _rng.randf_range(0.9, 1.1), 0.0 if (victim.is_player or attacker.is_player) else -8.0)
 
@@ -452,11 +451,13 @@ func _draw() -> void:
 			continue
 		for k in p.moons:
 			Art.moon(self, p.moon_pos[k], C.MOON_RADIUS * (0.3 + 0.7 * p.moon_scale[k]), p.color)
-		Art.planet(self, p.pos, p.radius, p.color, p.look, p.blink_t < 0.12, p.squash)
+		Art.planet(self, p.pos, p.radius, p.color, p.look, p.blink_t < 0.12, p.squash, p.moons == 0)
 		if p.shield > 0.0:
 			Art.shield(self, p.pos, p.radius + 9.0, time)
 		var label_col := C.GOLD if p.is_player else Color.WHITE
 		Art.text(self, font, p.pos + Vector2(0, -p.radius - 14.0), p.pname, 22, label_col)
+		if p == leader:
+			Art.crown(self, p.pos + Vector2(0, -p.radius - 44.0), 14.0)
 
 	for pt in particles:
 		var k: float = pt.life / pt.max

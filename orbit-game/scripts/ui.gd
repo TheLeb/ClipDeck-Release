@@ -32,6 +32,9 @@ var _score_label: Label
 var _moon_label: Label
 var _moon_bar: ProgressBar
 var _board_rows: Array[Label] = []
+var _hint: Label
+var _dash: Control
+var _dash_ready := 1.0
 
 var _over_card: Control
 var _over_by: Label
@@ -113,7 +116,8 @@ func set_profile(pname: String, skin: int, best: int, sound_on: bool) -> void:
 
 func update_hud(me, board: Array) -> void:
 	_score_label.text = str(me.score)
-	_moon_label.text = "Moons %d/%d" % [me.moons, C.MAX_MOONS]
+	_moon_label.text = "Moons %d/%d" % [me.moons, C.MAX_MOONS] if me.moons > 0 else "No moons - careful!"
+	_moon_label.add_theme_color_override("font_color", Color.WHITE if me.moons > 0 else Color("ff9ec4"))
 	_moon_bar.value = C.DUST_PER_MOON if me.moons >= C.MAX_MOONS else me.dust_progress
 	var my_rank := board.find(me)
 	for i in _board_rows.size():
@@ -127,6 +131,27 @@ func update_hud(me, board: Array) -> void:
 		var p = board[idx]
 		row.text = "%d. %s  %d" % [idx + 1, p.pname, p.score]
 		row.add_theme_color_override("font_color", C.GOLD if p == me else Color.WHITE)
+
+
+## Short tip shown near the top while playing ("" hides it).
+func set_hint(text: String) -> void:
+	_hint.text = text
+
+
+## ready: 0 = just used, 1 = can dash again.
+func set_dash(ready: float) -> void:
+	if not is_equal_approx(ready, _dash_ready):
+		_dash_ready = ready
+		_dash.queue_redraw()
+
+
+func dash_center() -> Vector2:
+	return _hud.size - Vector2(120, 190)
+
+
+## True if a touch at this position is on the DASH button.
+func dash_hit(at: Vector2) -> bool:
+	return at.distance_to(dash_center()) < 100.0
 
 
 func set_joystick(on: bool, origin: Vector2, knob: Vector2) -> void:
@@ -178,6 +203,22 @@ func _build_hud() -> void:
 	_moon_bar.add_theme_stylebox_override("background", _flat(Color(1, 1, 1, 0.2), 7))
 	_moon_bar.add_theme_stylebox_override("fill", _flat(C.GOLD, 7))
 	lbox.add_child(_moon_bar)
+
+	_hint = _label("", 34, Color.WHITE, 10)
+	_hint.set_anchors_preset(Control.PRESET_TOP_WIDE)
+	_hint.position = Vector2(0, top + 230.0)
+	_hint.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_hud.add_child(_hint)
+
+	_dash = _full_rect()
+	_dash.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_hud.add_child(_dash)
+	_dash.draw.connect(func() -> void:
+		var c := dash_center()
+		var ready := _dash_ready >= 1.0
+		_dash.draw_circle(c, 80.0, Color(1, 1, 1, 0.18 if ready else 0.07), true, -1.0, true)
+		_dash.draw_arc(c, 80.0, -PI * 0.5, -PI * 0.5 + TAU * _dash_ready, 48, C.GOLD if ready else Color(1, 1, 1, 0.5), 8.0, true)
+		Art.text(_dash, font, c + Vector2(0, 11), "DASH", 30, Color(1, 1, 1, 1.0 if ready else 0.45)))
 
 	var right := PanelContainer.new()
 	right.mouse_filter = Control.MOUSE_FILTER_IGNORE

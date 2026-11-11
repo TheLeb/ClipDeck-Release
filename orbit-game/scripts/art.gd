@@ -5,7 +5,7 @@ extends RefCounted
 const C = preload("res://scripts/config.gd")
 
 
-static func planet(ci: CanvasItem, pos: Vector2, r: float, col: Color, look: Vector2, blinking: bool, squash: float) -> void:
+static func planet(ci: CanvasItem, pos: Vector2, r: float, col: Color, look: Vector2, blinking: bool, squash: float, scared := false) -> void:
 	var outline := col.darkened(0.55)
 	ci.draw_circle(pos, r + 3.5, outline, true, -1.0, true)
 	ci.draw_circle(pos, r, col.darkened(0.25), true, -1.0, true)
@@ -34,8 +34,22 @@ static func planet(ci: CanvasItem, pos: Vector2, r: float, col: Color, look: Vec
 	var mouth := pos + Vector2(0, r * 0.26) + shift
 	if squash > 0.0:
 		ci.draw_circle(mouth + Vector2(0, r * 0.08), r * 0.11, C.INK, true, -1.0, true)
+	elif scared:
+		# No moons left: worried frown and a sweat drop.
+		ci.draw_arc(mouth + Vector2(0, r * 0.24), r * 0.18, PI * 1.15, PI * 1.85, 12, C.INK, maxf(2.0, r * 0.075), true)
+		ci.draw_circle(pos + Vector2(r * 0.74, -r * 0.42), r * 0.11, Color("8fdcff"), true, -1.0, true)
 	else:
 		ci.draw_arc(mouth, r * 0.2, PI * 0.12, PI * 0.88, 12, C.INK, maxf(2.0, r * 0.075), true)
+
+
+## Little crown worn by whoever is first on the leaderboard.
+static func crown(ci: CanvasItem, pos: Vector2, s: float) -> void:
+	var pts := PackedVector2Array()
+	for v: Vector2 in [Vector2(-1, 0), Vector2(-1, -0.9), Vector2(-0.5, -0.4), Vector2(0, -1.1), Vector2(0.5, -0.4), Vector2(1, -0.9), Vector2(1, 0)]:
+		pts.append(pos + v * s)
+	ci.draw_colored_polygon(pts, C.GOLD)
+	pts.append(pts[0])
+	ci.draw_polyline(pts, C.INK, 3.0, true)
 
 
 static func moon(ci: CanvasItem, pos: Vector2, r: float, col: Color, alpha := 1.0) -> void:

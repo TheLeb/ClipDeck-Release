@@ -3,6 +3,7 @@ extends RefCounted
 ##   1. run away from stronger planets that are close,
 ##   2. otherwise chase a weaker planet (if it feels brave),
 ##   3. otherwise grab loose moons and stardust.
+## They also dash now and then, to escape or to lunge at a target.
 
 const C = preload("res://scripts/config.gd")
 
@@ -27,12 +28,15 @@ static func think(p, world) -> void:
 			prey_d = d
 
 	var dir := Vector2.ZERO
+	p.want_dash = false
 	if danger != Vector2.ZERO:
 		dir = danger.normalized()
 		p.chase_t = 0.0
+		p.want_dash = danger.length() > 0.8 and randf() < 0.35
 	elif prey != null and p.aggression > 0.3 and p.chase_cd <= 0.0:
 		dir = (prey.pos - p.pos).normalized()
 		p.chase_t += 0.2
+		p.want_dash = prey_d < p.ring_r + 240.0 and randf() < 0.3 * p.aggression
 		if p.chase_t > 2.0 + p.aggression * 3.0:
 			p.chase_t = 0.0
 			p.chase_cd = 3.5

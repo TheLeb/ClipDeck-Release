@@ -3,8 +3,13 @@
 A small, kid-friendly ".io style" arena game for phones, made with Godot 4.
 
 You are a little planet. Collect stardust to grow moons that circle around you.
-Your moons bump other planets: each bump knocks one of their moons loose, and a
-planet with no moons left pops. Small planets are faster, big planets are stronger.
+There is one rule for fighting: **touch another planet with one of your moons and
+it loses a moon. A planet with no moons left pops on the next hit.** So moons are
+both your lives and your weapons. Small planets are faster, big planets are stronger.
+
+**Dash** (button bottom right, or Space) zooms you forward for a moment. Nothing
+can hit you while you dash, so you can slip past a big planet's moons to reach it.
+Whoever leads the scoreboard wears a crown.
 
 | Menu | Playing | Game over |
 |---|---|---|
@@ -19,7 +24,8 @@ best-score saving. No real ads and no online play yet (see below).
 2. Open Godot, press **Import**, and pick the `project.godot` file in this folder.
 3. Press **F5** (or the Play button, top right).
 
-Controls: hold the mouse button (or a finger) and drag to steer. Arrow keys also work.
+Controls: hold the mouse button (or a finger) and drag to steer; tap DASH to dash.
+On a keyboard, arrow keys steer and Space dashes.
 
 ## Change how it plays
 
@@ -27,6 +33,7 @@ Open `scripts/config.gd`. Every speed, size, colour, name and score value is
 there with a comment. Good ones to try first:
 
 - `BOT_BRAVERY` - how much the computer players hunt (0 = peaceful, 1 = fierce)
+- `DASH_SPEED`, `DASH_TIME`, `DASH_COOLDOWN` - how the dash feels
 - `BOT_COUNT`, `DUST_COUNT`, `ARENA_RADIUS` - how busy the arena is
 - `SKINS` - the planet colours shown on the menu
 - `NAMES` - names used by bots and the "New name" button
