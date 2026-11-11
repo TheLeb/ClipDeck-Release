@@ -24,7 +24,7 @@ best-score saving. No real ads and no online play yet (see below).
 2. Open Godot, press **Import**, and pick the `project.godot` file in this folder.
 3. Press **F5** (or the Play button, top right).
 
-Controls: hold the mouse button (or a finger) and drag to steer; tap DASH to dash.
+Controls: push the stick (bottom left) with a finger or the mouse to steer; tap DASH to dash.
 On a keyboard, arrow keys steer and Space dashes.
 
 ## Change how it plays

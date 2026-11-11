@@ -34,7 +34,6 @@ var revive_used := false
 var rounds_played := 0
 
 var _touch_id := -1
-var _joy_origin := Vector2.ZERO
 var _joy_dir := Vector2.ZERO
 var _hud_timer := 0.0
 var _round_time := 0.0
@@ -94,7 +93,8 @@ func _process(delta: float) -> void:
 		ui.update_hud(world.player, world.leaderboard())
 
 
-## Floating joystick: touch anywhere, drag to steer. DASH button or Space to dash.
+## Steering stick fixed at the bottom left: the planet goes where your thumb
+## is relative to the stick's centre. DASH button or Space to dash.
 func _input(event: InputEvent) -> void:
 	if state != State.PLAYING:
 		return
@@ -105,19 +105,17 @@ func _input(event: InputEvent) -> void:
 			world.dash_player()
 		elif event.pressed and _touch_id == -1:
 			_touch_id = event.index
-			_joy_origin = event.position
-			_joy_dir = Vector2.ZERO
-			ui.set_joystick(true, _joy_origin, _joy_origin)
+			_steer_to(event.position)
 		elif not event.pressed and event.index == _touch_id:
 			_release_joystick()
 	elif event is InputEventScreenDrag and event.index == _touch_id:
-		var offset: Vector2 = event.position - _joy_origin
-		if offset.length() > JOY_RADIUS:
-			# Drag the base along so turning never needs a big swipe back.
-			_joy_origin = event.position - offset.normalized() * JOY_RADIUS
-			offset = event.position - _joy_origin
-		_joy_dir = offset / JOY_RADIUS
-		ui.set_joystick(true, _joy_origin, event.position)
+		_steer_to(event.position)
+
+
+func _steer_to(touch: Vector2) -> void:
+	var offset := (touch - ui.joy_center()).limit_length(JOY_RADIUS)
+	_joy_dir = offset / JOY_RADIUS if offset.length() > 10.0 else Vector2.ZERO
+	ui.set_joystick(true, offset)
 
 
 ## If the game runs slowly for a while, draw at a lower resolution from then
@@ -134,7 +132,7 @@ func _check_speed(delta: float) -> void:
 func _release_joystick() -> void:
 	_touch_id = -1
 	_joy_dir = Vector2.ZERO
-	ui.set_joystick(false, Vector2.ZERO, Vector2.ZERO)
+	ui.set_joystick(state == State.PLAYING, Vector2.ZERO)
 
 
 # -------------------------------------------------------------- game states --

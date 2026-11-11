@@ -43,7 +43,6 @@ var _over_best: Label
 var _revive_btn: Button
 
 var _joy_on := false
-var _joy_origin := Vector2.ZERO
 var _joy_knob := Vector2.ZERO
 var _time := 0.0
 
@@ -77,17 +76,18 @@ func show_menu() -> void:
 	_menu.visible = true
 	_hud.visible = false
 	_over.visible = false
-	set_joystick(false, Vector2.ZERO, Vector2.ZERO)
+	set_joystick(false, Vector2.ZERO)
 
 
 func show_hud() -> void:
 	_menu.visible = false
 	_hud.visible = true
 	_over.visible = false
+	set_joystick(true, Vector2.ZERO)
 
 
 func show_over(score: int, best: int, new_best: bool, by_name: String, can_revive: bool) -> void:
-	set_joystick(false, Vector2.ZERO, Vector2.ZERO)
+	set_joystick(false, Vector2.ZERO)
 	_over.visible = true
 	_over_by.text = "%s bumped you!" % by_name
 	_over_score.text = str(score)
@@ -154,9 +154,14 @@ func dash_hit(at: Vector2) -> bool:
 	return at.distance_to(dash_center()) < 100.0
 
 
-func set_joystick(on: bool, origin: Vector2, knob: Vector2) -> void:
+## The steering stick sits in a fixed spot, bottom left.
+func joy_center() -> Vector2:
+	return Vector2(150, _hud.size.y - 190)
+
+
+## on: show the stick. knob: how far the thumb pad is pushed from the centre.
+func set_joystick(on: bool, knob: Vector2) -> void:
 	_joy_on = on
-	_joy_origin = origin
 	_joy_knob = knob
 	_joy.queue_redraw()
 
@@ -171,9 +176,10 @@ func _build_joystick() -> void:
 	_joy.draw.connect(func() -> void:
 		if not _joy_on:
 			return
-		Art.disc(_joy, _joy_origin, 90.0, Color(1, 1, 1, 0.10))
-		_joy.draw_arc(_joy_origin, 90.0, 0.0, TAU, 48, Color(1, 1, 1, 0.35), 4.0, true)
-		Art.disc(_joy, _joy_knob, 38.0, Color(1, 1, 1, 0.55)))
+		var c := joy_center()
+		Art.disc(_joy, c, 90.0, Color(1, 1, 1, 0.10))
+		_joy.draw_arc(c, 90.0, 0.0, TAU, 48, Color(1, 1, 1, 0.35), 4.0, true)
+		Art.disc(_joy, c + _joy_knob, 38.0, Color(1, 1, 1, 0.55)))
 
 
 func _build_hud() -> void:
