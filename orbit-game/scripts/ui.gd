@@ -171,9 +171,9 @@ func _build_joystick() -> void:
 	_joy.draw.connect(func() -> void:
 		if not _joy_on:
 			return
-		_joy.draw_circle(_joy_origin, 90.0, Color(1, 1, 1, 0.10), true, -1.0, true)
+		Art.disc(_joy, _joy_origin, 90.0, Color(1, 1, 1, 0.10))
 		_joy.draw_arc(_joy_origin, 90.0, 0.0, TAU, 48, Color(1, 1, 1, 0.35), 4.0, true)
-		_joy.draw_circle(_joy_knob, 38.0, Color(1, 1, 1, 0.55), true, -1.0, true))
+		Art.disc(_joy, _joy_knob, 38.0, Color(1, 1, 1, 0.55)))
 
 
 func _build_hud() -> void:
@@ -216,7 +216,7 @@ func _build_hud() -> void:
 	_dash.draw.connect(func() -> void:
 		var c := dash_center()
 		var ready := _dash_ready >= 1.0
-		_dash.draw_circle(c, 80.0, Color(1, 1, 1, 0.18 if ready else 0.07), true, -1.0, true)
+		Art.disc(_dash, c, 80.0, Color(1, 1, 1, 0.18 if ready else 0.07))
 		_dash.draw_arc(c, 80.0, -PI * 0.5, -PI * 0.5 + TAU * _dash_ready, 48, C.GOLD if ready else Color(1, 1, 1, 0.5), 8.0, true)
 		Art.text(_dash, font, c + Vector2(0, 11), "DASH", 30, Color(1, 1, 1, 1.0 if ready else 0.45)))
 

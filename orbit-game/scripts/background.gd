@@ -3,6 +3,7 @@ extends Node2D
 ## that drift slower than the game world (parallax) to give a feeling of depth.
 
 const C = preload("res://scripts/config.gd")
+const Art = preload("res://scripts/art.gd")
 
 var cam_pos := Vector2.ZERO
 var _time := 0.0
@@ -44,4 +45,4 @@ func _draw() -> void:
 		var twinkle := 0.55 + 0.45 * sin(_time * 2.0 + phase)
 		var col: Color = st.col
 		var size: float = st.size
-		draw_circle(p, size, Color(col, 0.25 + 0.6 * twinkle))
+		Art.disc(self, p, size, Color(col, 0.25 + 0.6 * twinkle))

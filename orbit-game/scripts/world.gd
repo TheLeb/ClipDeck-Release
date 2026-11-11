@@ -108,9 +108,13 @@ func leaderboard() -> Array[Planet]:
 # -------------------------------------------------------------- simulation --
 
 func _process(delta: float) -> void:
-	delta = minf(delta, 1.0 / 30.0)
+	# On a slow frame, run several small steps instead of one, so the game
+	# keeps its real speed even when the frame rate drops.
+	delta = minf(delta, 4.0 / 30.0)
+	var steps := clampi(ceili(delta * 30.0), 1, 4)
+	for i in steps:
+		_step(delta / steps)
 	time += delta
-	_step(delta)
 	_update_camera(delta)
 	queue_redraw()
 
@@ -454,7 +458,7 @@ func _draw() -> void:
 		var gy := floorf(view.position.y / grid) * grid
 		while gy < view.end.y:
 			if Vector2(gx, gy).length() < C.ARENA_RADIUS - 20.0:
-				draw_circle(Vector2(gx, gy), 4.0, Color(1, 1, 1, 0.08))
+				Art.disc(self, Vector2(gx, gy), 4.0, Color(1, 1, 1, 0.08))
 			gy += grid
 		gx += grid
 	draw_arc(Vector2.ZERO, C.ARENA_RADIUS + 26.0, 0.0, TAU, 256, Color(C.GOLD, 0.18), 30.0, true)
@@ -468,7 +472,7 @@ func _draw() -> void:
 			var cell: Array = _dust_cells.get(Vector2i(cx, cy), [])
 			for i: int in cell:
 				var ph := dust_phase[i]
-				Art.sparkle(self, dust_pos[i], 9.0 + 2.0 * sin(time * 3.0 + ph), dust_col[i], time * 0.6 + ph)
+				Art.sparkle(self, dust_pos[i], 9.0 + 2.5 * sin(time * 3.0 + ph), dust_col[i])
 
 	# Loose moons and dropped stardust (they blink before disappearing).
 	for item in loose:
@@ -479,24 +483,29 @@ func _draw() -> void:
 		var alpha := 1.0 if left > 3.0 or fmod(left, 0.4) > 0.2 else 0.35
 		var icol: Color = item.color
 		if item.kind == "moon":
-			draw_circle(ip, C.MOON_RADIUS * 2.0, Color(1, 1, 1, 0.12 * alpha))
+			Art.disc(self, ip, C.MOON_RADIUS * 2.0, Color(1, 1, 1, 0.12 * alpha))
 			Art.moon(self, ip, C.MOON_RADIUS, icol, alpha)
 		else:
-			Art.sparkle(self, ip, 12.0, Color(icol, alpha), time * 2.0)
+			Art.sparkle(self, ip, 12.0, Color(icol, alpha))
 
 	# Orbit rings first so they sit underneath everything.
 	for p in planets:
 		if p.alive and view.grow(p.ring_r).has_point(p.pos):
-			draw_arc(p.pos, p.ring_r, 0.0, TAU, 48, Color(p.color, 0.2), 2.0, true)
+			Art.ring(self, p.pos, p.ring_r, Color(p.color, 0.3))
 
 	for p in planets:
 		if not p.alive or not view.grow(p.ring_r + 20.0).has_point(p.pos):
 			continue
 		for k in p.moons:
 			Art.moon(self, p.moon_pos[k], C.MOON_RADIUS * (0.3 + 0.7 * p.moon_scale[k]), p.color)
-		Art.planet(self, p.pos, p.radius, p.color, p.look, p.blink_t < 0.12, p.squash, p.moons == 0)
 		if p.shield > 0.0:
 			Art.shield(self, p.pos, p.radius + 9.0, time)
+		Art.planet(self, p.pos, p.radius, p.color, p.look, p.blink_t < 0.12, p.squash, p.moons == 0)
+
+	# Names last, all together (keeps the shapes above in one batch).
+	for p in planets:
+		if not p.alive or not view.grow(p.ring_r + 20.0).has_point(p.pos):
+			continue
 		var label_col := C.GOLD if p.is_player else Color.WHITE
 		Art.text(self, font, p.pos + Vector2(0, -p.radius - 14.0), p.pname, 22, label_col)
 		if p == leader:
@@ -506,7 +515,7 @@ func _draw() -> void:
 		var k: float = pt.life / pt.max
 		var pc: Color = pt.color
 		var size: float = pt.size
-		draw_circle(pt.pos, size * k, Color(pc, k))
+		Art.disc(self, pt.pos, size * k, Color(pc, k))
 	for t in texts:
 		var tc: Color = t.color
 		var life: float = t.life

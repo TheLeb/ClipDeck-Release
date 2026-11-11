@@ -6,6 +6,7 @@ const C = preload("res://scripts/config.gd")
 const World = preload("res://scripts/world.gd")
 const UI = preload("res://scripts/ui.gd")
 const Background = preload("res://scripts/background.gd")
+const Art = preload("res://scripts/art.gd")
 
 const SAVE_PATH := "user://orbit_save.cfg"
 const JOY_RADIUS := 90.0
@@ -43,6 +44,7 @@ var _lite := false
 
 func _ready() -> void:
 	randomize()
+	Art.setup()
 	_load()
 	var font := _make_font()
 
