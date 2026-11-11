@@ -5,3 +5,4 @@ android/
 *.aab
 *.keystore
 export_credentials.cfg
+build/
