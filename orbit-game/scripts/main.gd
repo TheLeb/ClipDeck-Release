@@ -13,7 +13,8 @@ const HINT_SECONDS := 5.0
 const HINTS: Array[String] = [
 	"Collect stardust to grow moons",
 	"Hit other planets with your moons",
-	"No moons left? One more hit pops them!",
+	"Every hit knocks off half their moons",
+	"No moons left? The next hit pops them!",
 	"Tap DASH to zoom past their moons",
 ]
 
@@ -36,6 +37,8 @@ var _joy_origin := Vector2.ZERO
 var _joy_dir := Vector2.ZERO
 var _hud_timer := 0.0
 var _round_time := 0.0
+var _slow_time := 0.0
+var _lite := false
 
 
 func _ready() -> void:
@@ -80,6 +83,7 @@ func _process(delta: float) -> void:
 	world.move_input = keys if keys != Vector2.ZERO else _joy_dir
 	ui.set_dash(1.0 - world.player.dash_cd / C.DASH_COOLDOWN)
 	_round_time += delta
+	_check_speed(delta)
 	var tip := int(_round_time / HINT_SECONDS)
 	ui.set_hint(HINTS[tip] if rounds_played <= 3 and tip < HINTS.size() else "")
 	_hud_timer -= delta
@@ -112,6 +116,17 @@ func _input(event: InputEvent) -> void:
 			offset = event.position - _joy_origin
 		_joy_dir = offset / JOY_RADIUS
 		ui.set_joystick(true, _joy_origin, event.position)
+
+
+## If the game runs slowly for a while, draw at a lower resolution from then
+## on. Slightly softer picture, far less work for a weak phone or a browser.
+func _check_speed(delta: float) -> void:
+	if _lite or _round_time < 3.0:
+		return
+	_slow_time = _slow_time + delta if Engine.get_frames_per_second() < 45.0 else 0.0
+	if _slow_time > 2.5:
+		_lite = true
+		get_window().content_scale_mode = Window.CONTENT_SCALE_MODE_VIEWPORT
 
 
 func _release_joystick() -> void:

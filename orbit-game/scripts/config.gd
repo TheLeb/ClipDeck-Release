@@ -9,12 +9,12 @@ const DUST_COUNT := 320
 
 # ---- Planets ----
 const START_MOONS := 2
-const MAX_MOONS := 14
+const MAX_MOONS := 8
 const DUST_PER_MOON := 4          # stardust needed to grow one new moon
 const PLANET_BASE_RADIUS := 28.0
 const PLANET_RADIUS_PER_MOON := 2.0
-const SPEED_SMALL := 300.0        # speed with no moons
-const SPEED_BIG := 200.0          # speed with MAX_MOONS moons
+const SPEED_SMALL := 285.0        # speed with no moons
+const SPEED_BIG := 235.0          # speed with MAX_MOONS moons
 
 # ---- Moons ----
 const MOON_RADIUS := 11.0
@@ -28,10 +28,14 @@ const DASH_TIME := 0.28           # seconds of zooming; nothing can hit you mean
 const DASH_COOLDOWN := 2.5        # seconds before you can dash again
 
 # ---- Fighting ----
-const HIT_SHIELD_TIME := 0.7      # safe time after being bumped
+const HIT_LOSS := 0.5             # share of its moons a planet loses per hit (at least 1)
+const HIT_KNOCKBACK := 200.0      # how hard a hit pushes the planet away
+const HIT_SHIELD_TIME := 0.45     # safe time after being bumped
+const HIT_DIZZY_TIME := 1.0       # after a hit the planet is slow for this long...
+const HIT_DIZZY_SPEED := 0.45     # ...moving at this share of its speed (dash still works)
 const SPAWN_SHIELD_TIME := 3.0    # safe time after (re)spawning
 const BOT_RESPAWN_TIME := 2.5
-const BOT_BRAVERY := 0.6         # 0 = bots never hunt, 1 = bots hunt a lot
+const BOT_BRAVERY := 0.9         # 0 = bots never hunt, 1 = bots hunt a lot
 
 # ---- Score ----
 const SCORE_DUST := 1

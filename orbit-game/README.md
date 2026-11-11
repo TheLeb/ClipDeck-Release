@@ -4,7 +4,7 @@ A small, kid-friendly ".io style" arena game for phones, made with Godot 4.
 
 You are a little planet. Collect stardust to grow moons that circle around you.
 There is one rule for fighting: **touch another planet with one of your moons and
-it loses a moon. A planet with no moons left pops on the next hit.** So moons are
+it loses half its moons. A planet with no moons left pops on the next hit.** So moons are
 both your lives and your weapons. Small planets are faster, big planets are stronger.
 
 **Dash** (button bottom right, or Space) zooms you forward for a moment. Nothing
@@ -33,6 +33,7 @@ Open `scripts/config.gd`. Every speed, size, colour, name and score value is
 there with a comment. Good ones to try first:
 
 - `BOT_BRAVERY` - how much the computer players hunt (0 = peaceful, 1 = fierce)
+- `HIT_LOSS`, `HIT_SHIELD_TIME` - how quickly fights end
 - `DASH_SPEED`, `DASH_TIME`, `DASH_COOLDOWN` - how the dash feels
 - `BOT_COUNT`, `DUST_COUNT`, `ARENA_RADIUS` - how busy the arena is
 - `SKINS` - the planet colours shown on the menu

@@ -19,6 +19,11 @@ var autopilot := false            # lets a bot brain steer the player (demo mode
 var dust_pos := PackedVector2Array()
 var dust_col := PackedColorArray()
 var dust_phase := PackedFloat32Array()
+# Stardust is sorted into a grid of square cells so each planet only has to
+# look at the few pieces near it instead of all of them (much faster).
+const DUST_CELL := 200.0
+var _dust_cells := {}                  # Vector2i cell -> Array of dust indexes
+var _dust_cell: Array[Vector2i] = []   # which cell each piece is in
 var loose: Array[Dictionary] = []      # knocked-off moons and dropped stardust
 var particles: Array[Dictionary] = []
 var texts: Array[Dictionary] = []
@@ -36,7 +41,9 @@ func _ready() -> void:
 	add_child(cam)
 	cam.make_current()
 	for i in C.DUST_COUNT:
-		dust_pos.append(_random_point(40.0))
+		dust_pos.append(Vector2.ZERO)
+		_dust_cell.append(Vector2i(999999, 999999))
+		_move_dust(i, _random_point(40.0))
 		dust_col.append(C.DUST_COLORS[_rng.randi() % C.DUST_COLORS.size()])
 		dust_phase.append(_rng.randf() * TAU)
 	for i in C.BOT_COUNT:
@@ -68,6 +75,7 @@ func revive_player() -> void:
 	player.alive = true
 	player.vel = Vector2.ZERO
 	player.knock = Vector2.ZERO
+	player.dizzy = 0.0
 	player.set_moons(C.START_MOONS)
 	player.shield = C.SPAWN_SHIELD_TIME + 1.0
 
@@ -155,15 +163,38 @@ func _collect_dust(delta: float) -> void:
 		if not p.alive:
 			continue
 		var grab := p.radius + 12.0
-		var pull := p.radius + 70.0
-		for i in dust_pos.size():
-			var d := p.pos.distance_to(dust_pos[i])
-			if d < grab:
-				_burst(dust_pos[i], dust_col[i], 4, 90.0)
-				dust_pos[i] = _random_point(40.0)
-				_gain_dust(p, 1)
-			elif d < pull:
-				dust_pos[i] = dust_pos[i].move_toward(p.pos, 260.0 * delta)
+		var pull := p.radius + 70.0   # must stay smaller than DUST_CELL
+		var c := _cell_of(p.pos)
+		for cx in range(c.x - 1, c.x + 2):
+			for cy in range(c.y - 1, c.y + 2):
+				var cell: Array = _dust_cells.get(Vector2i(cx, cy), [])
+				for k in range(cell.size() - 1, -1, -1):
+					var i: int = cell[k]
+					var d := p.pos.distance_to(dust_pos[i])
+					if d < grab:
+						_burst(dust_pos[i], dust_col[i], 4, 90.0)
+						_move_dust(i, _random_point(40.0))
+						_gain_dust(p, 1)
+					elif d < pull:
+						_move_dust(i, dust_pos[i].move_toward(p.pos, 260.0 * delta))
+
+
+func _cell_of(at: Vector2) -> Vector2i:
+	return Vector2i(floori(at.x / DUST_CELL), floori(at.y / DUST_CELL))
+
+
+## Move one piece of stardust and keep the grid up to date.
+func _move_dust(i: int, to: Vector2) -> void:
+	dust_pos[i] = to
+	var c := _cell_of(to)
+	if c == _dust_cell[i]:
+		return
+	if _dust_cells.has(_dust_cell[i]):
+		_dust_cells[_dust_cell[i]].erase(i)
+	if not _dust_cells.has(c):
+		_dust_cells[c] = []
+	_dust_cells[c].append(i)
+	_dust_cell[i] = c
 
 
 func _gain_dust(p: Planet, amount: int) -> void:
@@ -202,6 +233,8 @@ func _update_loose(delta: float) -> void:
 		if item.age < 0.45:
 			continue
 		for p in planets:
+			if item.get("owner") == p and item.age < 2.5:
+				continue   # no instantly grabbing back the moons you just lost
 			if p.alive and p.pos.distance_to(ip) < p.radius + 16.0:
 				if item.kind == "moon":
 					p.add_moon()
@@ -248,7 +281,7 @@ func _moons_hit_planet(attacker: Planet, victim: Planet) -> void:
 
 func _bump(victim: Planet, attacker: Planet, at: Vector2) -> void:
 	var away := (victim.pos - attacker.pos).normalized()
-	victim.knock += away * 420.0
+	victim.knock += away * C.HIT_KNOCKBACK
 	victim.squash = 1.0
 	_burst(at, Color.WHITE, 10, 220.0)
 	if victim.is_player:
@@ -256,15 +289,20 @@ func _bump(victim: Planet, attacker: Planet, at: Vector2) -> void:
 	if victim.moons == 0:
 		_pop(victim, attacker)
 		return
-	var last := victim.moons - 1
-	_drop_moon(victim.moon_pos[last], away.rotated(_rng.randf_range(-1.2, 1.2)) * 260.0, victim.color)
-	victim.remove_moon(last)
+	# The lost moons fly back towards the attacker, who can scoop them up.
+	var lost := maxi(1, ceili(victim.moons * C.HIT_LOSS))
+	for k in lost:
+		var last := victim.moons - 1
+		var dir := (-away).rotated(_rng.randf_range(-1.3, 1.3))
+		_drop_moon(victim.moon_pos[last], dir * _rng.randf_range(160.0, 300.0), victim.color, victim)
+		victim.remove_moon(last)
 	victim.shield = C.HIT_SHIELD_TIME
-	attacker.score += C.SCORE_HIT
+	victim.dizzy = C.HIT_DIZZY_TIME
+	attacker.score += C.SCORE_HIT * lost
 	if attacker.is_player:
-		_float_text(at, "Hit! +%d" % C.SCORE_HIT, Color.WHITE)
+		_float_text(at, "Hit! +%d" % (C.SCORE_HIT * lost), Color.WHITE)
 	elif victim.is_player:
-		_float_text(victim.pos + Vector2(0, -victim.radius - 40.0), "Ouch! -1 moon", Color("ff9ec4"))
+		_float_text(victim.pos + Vector2(0, -victim.radius - 40.0), "Ouch! -%d" % lost, Color("ff9ec4"))
 	if _on_screen(at):
 		Sfx.play("hit", _rng.randf_range(0.9, 1.1), 0.0 if (victim.is_player or attacker.is_player) else -8.0)
 
@@ -290,8 +328,8 @@ func _pop(victim: Planet, attacker: Planet) -> void:
 		player_popped.emit(attacker.pname)
 
 
-func _drop_moon(at: Vector2, vel: Vector2, color: Color) -> void:
-	loose.append({"kind": "moon", "pos": at, "vel": vel, "color": color, "age": 0.0, "life": 14.0})
+func _drop_moon(at: Vector2, vel: Vector2, color: Color, owner: Planet) -> void:
+	loose.append({"kind": "moon", "pos": at, "vel": vel, "color": color, "age": 0.0, "life": 14.0, "owner": owner})
 
 
 func _reset_bot(p: Planet, moon_count: int) -> void:
@@ -308,6 +346,7 @@ func _reset_bot(p: Planet, moon_count: int) -> void:
 	p.knock = Vector2.ZERO
 	p.input_dir = Vector2.ZERO
 	p.alive = true
+	p.dizzy = 0.0
 	p.score = 0
 	p.dust_progress = 0
 	p.orbit_angle = _rng.randf() * TAU
@@ -422,10 +461,14 @@ func _draw() -> void:
 	draw_arc(Vector2.ZERO, C.ARENA_RADIUS + 8.0, 0.0, TAU, 256, C.GOLD, 12.0, true)
 
 	# Stardust.
-	for i in dust_pos.size():
-		if view.has_point(dust_pos[i]):
-			var ph := dust_phase[i]
-			Art.sparkle(self, dust_pos[i], 9.0 + 2.0 * sin(time * 3.0 + ph), dust_col[i], time * 0.6 + ph)
+	var c0 := _cell_of(view.position)
+	var c1 := _cell_of(view.end)
+	for cx in range(c0.x, c1.x + 1):
+		for cy in range(c0.y, c1.y + 1):
+			var cell: Array = _dust_cells.get(Vector2i(cx, cy), [])
+			for i: int in cell:
+				var ph := dust_phase[i]
+				Art.sparkle(self, dust_pos[i], 9.0 + 2.0 * sin(time * 3.0 + ph), dust_col[i], time * 0.6 + ph)
 
 	# Loose moons and dropped stardust (they blink before disappearing).
 	for item in loose:

@@ -13,7 +13,7 @@ static func think(p, world) -> void:
 	var danger := Vector2.ZERO
 	var prey = null
 	var prey_d := 520.0
-	var brave_gap := 1 if p.aggression > 0.5 else 2
+	var brave_gap := 1 if p.aggression > 0.3 else 2
 
 	for o in world.planets:
 		if o == p or not o.alive:
@@ -33,13 +33,13 @@ static func think(p, world) -> void:
 		dir = danger.normalized()
 		p.chase_t = 0.0
 		p.want_dash = danger.length() > 0.8 and randf() < 0.35
-	elif prey != null and p.aggression > 0.3 and p.chase_cd <= 0.0:
+	elif prey != null and p.aggression > 0.15 and p.chase_cd <= 0.0:
 		dir = (prey.pos - p.pos).normalized()
 		p.chase_t += 0.2
-		p.want_dash = prey_d < p.ring_r + 240.0 and randf() < 0.3 * p.aggression
+		p.want_dash = prey_d < p.ring_r + 240.0 and randf() < 0.5 * p.aggression
 		if p.chase_t > 2.0 + p.aggression * 3.0:
 			p.chase_t = 0.0
-			p.chase_cd = 3.5
+			p.chase_cd = 2.0
 	else:
 		dir = _nearest_pickup(p, world)
 

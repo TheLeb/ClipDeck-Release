@@ -18,6 +18,7 @@ var score := 0
 var dust_progress := 0
 var shield := 0.0
 var respawn_timer := 0.0
+var dizzy := 0.0                 # > 0 while slowed after being hit
 var dash_t := 0.0                # > 0 while dashing
 var dash_cd := 0.0               # > 0 while dash is recharging
 var dash_dir := Vector2.RIGHT
@@ -56,7 +57,8 @@ func target_ring() -> float:
 
 
 func max_speed() -> float:
-	return lerpf(C.SPEED_SMALL, C.SPEED_BIG, float(moons) / C.MAX_MOONS)
+	var speed := lerpf(C.SPEED_SMALL, C.SPEED_BIG, float(moons) / C.MAX_MOONS)
+	return speed * C.HIT_DIZZY_SPEED if dizzy > 0.0 else speed
 
 
 func add_moon() -> bool:
@@ -120,6 +122,7 @@ func tick(delta: float) -> void:
 		moon_scale[k] = move_toward(moon_scale[k], 1.0, delta * 5.0)
 
 	shield = maxf(0.0, shield - delta)
+	dizzy = maxf(0.0, dizzy - delta)
 	squash = maxf(0.0, squash - delta * 2.5)
 	if vel.length() > 20.0:
 		look = look.lerp(vel.normalized(), 1.0 - exp(-8.0 * delta))
