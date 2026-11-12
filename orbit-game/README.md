@@ -4,19 +4,34 @@ A small, kid-friendly ".io style" arena game for phones, made with Godot 4.
 
 You are a little planet. Collect stardust to grow moons that circle around you.
 There is one rule for fighting: **touch another planet with one of your moons and
-it loses half its moons. A planet with no moons left pops on the next hit.** So moons are
-both your lives and your weapons. Small planets are faster, big planets are stronger.
+it loses half its moons. A planet with no moons left pops on the next hit.** So
+moons are both your lives and your weapons.
 
 **Dash** (button bottom right, or Space) zooms you forward for a moment. Nothing
-can hit you while you dash, so you can slip past a big planet's moons to reach it.
-Whoever leads the scoreboard wears a crown.
+can hit you while you dash, so you can slip past a big planet's moons.
 
-| Menu | Playing | Game over |
-|---|---|---|
-| ![](screenshots/1_menu.png) | ![](screenshots/2_play_early.png) | ![](screenshots/4_game_over.png) |
+| Menu | Shop | Round | Results |
+|---|---|---|---|
+| ![](screenshots/1_menu.png) | ![](screenshots/2_shop.png) | ![](screenshots/3_round.png) | ![](screenshots/4_results.png) |
 
-This is version 1: one arena, 11 computer players, leaderboard, skins, sounds,
-best-score saving. No real ads and no online play yet (see below).
+## What is in the game
+
+- **Rounds:** 2 minutes, you against 11 computer players. Popped planets come
+  back after 3 seconds. Highest score when the time is up wins.
+- **Maps:** Starfield (classic), Asteroid Belt (rocks block the way), Black Hole
+  (the middle pulls you in) and Ice Ring (small and slippery). They rotate, or
+  you pick one on the menu.
+- **Coins:** earned every round (place, score, pops), from a daily gift with a
+  7-day streak, and from "watch an ad" buttons.
+- **Shop:** planet skins, hats, trails and moon styles, paid with coins.
+- **Skins with stats:** each special skin is a bit better at one thing and a bit
+  worse at another, so none of them is simply the best.
+- **Custom names** with a basic bad-word filter.
+- **Ranks screen** with Country and Global tabs (offline for now, see below).
+
+Three things are **placeholders** in this version and say so in the game or the code:
+ads (`scripts/ad_manager.gd`), real-money purchases (`scripts/store.gd`) and the
+online leaderboard (`scripts/leaderboard.gd`).
 
 ## Run it
 
@@ -25,34 +40,40 @@ best-score saving. No real ads and no online play yet (see below).
 3. Press **F5** (or the Play button, top right).
 
 Controls: push the stick (bottom left) with a finger or the mouse to steer; tap DASH to dash.
-On a keyboard, arrow keys steer and Space dashes.
+On a keyboard, arrow keys steer, Space dashes and Escape pauses.
 
 ## Change how it plays
 
-Open `scripts/config.gd`. Every speed, size, colour, name and score value is
-there with a comment. Good ones to try first:
+Three files hold everything you are likely to tweak, each with comments:
 
-- `BOT_BRAVERY` - how much the computer players hunt (0 = peaceful, 1 = fierce)
-- `HIT_LOSS`, `HIT_SHIELD_TIME` - how quickly fights end
-- `DASH_SPEED`, `DASH_TIME`, `DASH_COOLDOWN` - how the dash feels
-- `BOT_COUNT`, `DUST_COUNT`, `ARENA_RADIUS` - how busy the arena is
-- `SKINS` - the planet colours shown on the menu
-- `NAMES` - names used by bots and the "New name" button
+| File | What you change there |
+|---|---|
+| `scripts/config.gd` | Round length, speeds, fighting, dash, score, coin rewards, bot names |
+| `scripts/maps.gd` | The maps: size, colours, asteroids, black hole, slipperiness |
+| `scripts/catalog.gd` | Skins and their stats, hats, trails, moon styles, prices, coin packs |
+
+Good ones to try first: `ROUND_TIME`, `BOT_BRAVERY` (how much bots hunt),
+`HIT_LOSS` (how quickly fights end), `PLACE_COINS`, and the prices in `catalog.gd`.
+To add a skin, copy an entry in `SKINS` and give it a new id, name and colour.
 
 ## Files
 
 | File | What it does |
 |---|---|
-| `scripts/config.gd` | All tweakable numbers, colours and names |
-| `scripts/main.gd` | Starts everything, joystick, menu / playing / game over |
-| `scripts/world.gd` | Game rules (pickups, bumps, pops) and drawing |
-| `scripts/planet.gd` | One planet: movement and its ring of moons |
+| `scripts/main.gd` | Starts everything, touch controls, runs the rounds |
+| `scripts/world.gd` | Game rules (pickups, bumps, pops, map hazards) and drawing |
+| `scripts/planet.gd` | One planet: movement, its ring of moons, its skin stats |
 | `scripts/bot_brain.gd` | Computer player steering |
-| `scripts/art.gd` | Drawing of planets, moons, sparkles (no image files needed) |
-| `scripts/ui.gd` | Menu, score display, leaderboard, game-over card |
-| `scripts/ad_manager.gd` | Ad placeholder (see below) |
+| `scripts/art.gd` | All drawing (planets, hats, moons...) from a few shared shapes |
+| `scripts/background.gd` | Sky colours and stars |
+| `scripts/profile.gd` | The saved player data: name, coins, items, records |
+| `scripts/ui.gd` | Menu and in-game display; owns the screens below |
+| `scripts/shop_ui.gd`, `results_ui.gd`, `ranks_ui.gd`, `popups.gd` | Shop, round results, ranks, pop-up cards |
+| `scripts/widgets.gd` | Shared buttons, labels and cards |
+| `scripts/name_filter.gd` | Checks typed names |
+| `scripts/ad_manager.gd`, `store.gd`, `leaderboard.gd` | The three placeholders (ads, purchases, online ranks) |
 | `scripts/sfx.gd` | Sound effects |
-| `dev/shots.gd` | Developer tool that plays a demo and saves screenshots |
+| `dev/` | Developer tools: screenshot tour, browser test page |
 
 ## Put it on an Android phone
 
@@ -64,23 +85,39 @@ Godot at them in *Editor Settings > Export > Android*, add an Android preset in
 *Project > Export*, plug in your phone with USB debugging on, and press the
 small Android button next to Play.
 
-## Adding real ads
+## Browser build
 
-The game only calls two functions in `scripts/ad_manager.gd`:
-`show_rewarded()` (the "Keep going!" button) and `game_over()` (a full-screen
-ad every 3rd game over). Right now they only print a message. To earn money,
-install a Godot AdMob plugin and call it from those two functions.
+*Project > Export > Web* gives a folder you can upload to any web host or to
+game portals. `dev/build_test_page.py` repacks that export for the Claude test
+link (see the comment at the top of that file).
 
-**Important, because this game is kid-friendly:** if the Play Store listing
-targets children (under 13), Google's *Families Policy* applies. You must use
-an ad SDK from Google's "Families Self-Certified Ads SDK" list, show only
-child-appropriate, non-personalised ads, and fill in the target-age and data
-safety forms honestly. Read the policy before adding ads.
+## Before a real release
+
+**Ads.** The game calls `Ads.show_rewarded()` (double coins, free coins) and
+`Ads.round_finished()` (a full-screen ad every 3rd round, unless "No Ads" was
+bought). Both only print a message and hand out the reward straight away.
+Install a Godot AdMob plugin and call it from those two functions.
+
+**Real purchases.** `Store.buy()` hands the pack out for free and the shop says
+so. Connect Google Play Billing there and grant the pack only after Google
+confirms the payment. Take the prices shown from Google Play instead of the
+placeholder texts in `catalog.gd`.
+
+**Online leaderboard.** `leaderboard.gd` has three small functions that return
+the player's own rounds from the device. Point them at a server (a leaderboard
+service or your own) and the Ranks screen shows real Country and Global lists.
+The server must also check names and scores; never trust what the app sends.
+
+**Children.** If the Play Store listing targets children under 13, Google's
+*Families Policy* applies: only ad SDKs from Google's Families Self-Certified
+list, no personalised ads, stricter rules for purchases, and typed names shown
+to other players need proper moderation. Read the policy before adding any of
+the three things above.
 
 ## Multiplayer roadmap
 
-The player and the bots already share one rule set; the only difference is who
-fills in each planet's `input_dir`. That is deliberate:
+The player and the bots share one rule set; the only difference is who fills in
+each planet's `input_dir`. That is deliberate:
 
 1. **Now:** bots only, works offline.
 2. **Next:** same Wi-Fi / hotspot play, one phone hosts (Godot's built-in ENet

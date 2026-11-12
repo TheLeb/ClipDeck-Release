@@ -6,6 +6,10 @@ const C = preload("res://scripts/config.gd")
 const Art = preload("res://scripts/art.gd")
 
 var cam_pos := Vector2.ZERO
+var top := Color("1c1a52")      # current sky colours (they glide to the target)
+var bottom := Color("5a2a8a")
+var _target_top := top
+var _target_bottom := bottom
 var _time := 0.0
 var _stars: Array[Dictionary] = []
 
@@ -23,8 +27,17 @@ func _ready() -> void:
 		})
 
 
+## Each map has its own sky; the colours fade over smoothly.
+func set_sky(sky_top: Color, sky_bottom: Color) -> void:
+	_target_top = sky_top
+	_target_bottom = sky_bottom
+
+
 func _process(delta: float) -> void:
 	_time += delta
+	var t := 1.0 - exp(-3.0 * delta)
+	top = top.lerp(_target_top, t)
+	bottom = bottom.lerp(_target_bottom, t)
 	queue_redraw()
 
 
@@ -32,7 +45,7 @@ func _draw() -> void:
 	var s := get_viewport_rect().size
 	draw_polygon(
 		PackedVector2Array([Vector2.ZERO, Vector2(s.x, 0), s, Vector2(0, s.y)]),
-		PackedColorArray([C.BG_TOP, C.BG_TOP, C.BG_BOTTOM, C.BG_BOTTOM]))
+		PackedColorArray([top, top, bottom, bottom]))
 
 	var wrap := s + Vector2(200, 200)
 	for st: Dictionary in _stars:

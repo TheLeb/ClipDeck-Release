@@ -1,11 +1,12 @@
 extends RefCounted
-## Every number, colour and name you might want to tweak lives in this file.
+## The numbers and colours you are most likely to tweak live in this file.
 ## Change a value, press Play (F5) in Godot, and see what happens.
+## Maps are in maps.gd; skins, hats, prices and coin packs are in catalog.gd.
 
-# ---- Arena ----
-const ARENA_RADIUS := 1900.0
+# ---- Rounds ----
+const ROUND_TIME := 120.0         # seconds per round
+const PLAYER_RESPAWN_TIME := 3.0  # seconds you sit out after being popped
 const BOT_COUNT := 11
-const DUST_COUNT := 320
 
 # ---- Planets ----
 const START_MOONS := 2
@@ -35,39 +36,37 @@ const HIT_DIZZY_TIME := 1.0       # after a hit the planet is slow for this long
 const HIT_DIZZY_SPEED := 0.45     # ...moving at this share of its speed (dash still works)
 const SPAWN_SHIELD_TIME := 3.0    # safe time after (re)spawning
 const BOT_RESPAWN_TIME := 2.5
-const BOT_BRAVERY := 0.9         # 0 = bots never hunt, 1 = bots hunt a lot
+const BOT_BRAVERY := 0.9          # 0 = bots never hunt, 1 = bots hunt a lot
 
 # ---- Score ----
 const SCORE_DUST := 1
 const SCORE_LOOSE_MOON := 5
 const SCORE_HIT := 3
-const SCORE_POP := 20
+const SCORE_POP := 25
+
+# ---- Coins ----
+const START_COINS := 100                                  # welcome gift for a new player
+const PLACE_COINS: Array[int] = [60, 40, 30, 20, 20, 20]  # 1st place, 2nd place, ...
+const OTHER_PLACE_COINS := 10                             # everyone below that list
+const SCORE_PER_COIN := 20                                # 1 coin for every 20 points
+const COINS_PER_POP := 3
+const DAILY_COINS: Array[int] = [25, 40, 60, 80, 100, 130, 250]   # day 1 ... day 7 of a streak
+const AD_COINS := 30                                      # "free coins" ad reward
+const AD_COINS_PER_DAY := 3
 
 # ---- Camera ----
 const ZOOM_SMALL := 1.0
 const ZOOM_BIG := 0.72
 
 # ---- Colours ----
-const SKINS: Array[Color] = [
-	Color("ff7eb6"), # pink
-	Color("ffa552"), # orange
-	Color("ffd93d"), # yellow
-	Color("6be39a"), # green
-	Color("4dd9d0"), # teal
-	Color("5cb8ff"), # sky blue
-	Color("a98bff"), # purple
-	Color("ff7b6b"), # coral
-]
 const DUST_COLORS: Array[Color] = [
 	Color("fff3a3"), Color("ffc2e2"), Color("b5f5ff"), Color("c9ffb8"), Color("ffd6a5"),
 ]
-const BG_TOP := Color("1c1a52")
-const BG_BOTTOM := Color("5a2a8a")
 const INK := Color("2a1b4d")       # dark outline / text colour
 const CREAM := Color("fff8ee")
 const GOLD := Color("ffd93d")
 
-# ---- Names (all kid friendly) ----
+# ---- Bot names (all kid friendly) ----
 const NAMES: Array[String] = [
 	"Luna", "Cosmo", "Pixel", "Nova", "Ziggy", "Bubbles", "Comet", "Mango",
 	"Pip", "Rocket", "Jelly", "Noodle", "Waffle", "Sprout", "Zippy", "Momo",

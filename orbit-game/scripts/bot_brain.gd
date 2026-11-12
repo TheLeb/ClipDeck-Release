@@ -3,7 +3,7 @@ extends RefCounted
 ##   1. run away from stronger planets that are close,
 ##   2. otherwise chase a weaker planet (if it feels brave),
 ##   3. otherwise grab loose moons and stardust.
-## They also dash now and then, to escape or to lunge at a target.
+## They also dash now and then, and steer around asteroids and the black hole.
 
 const C = preload("res://scripts/config.gd")
 
@@ -44,9 +44,29 @@ static func think(p, world) -> void:
 		dir = _nearest_pickup(p, world)
 
 	# Stay away from the arena wall.
-	var edge: float = p.pos.length() - (C.ARENA_RADIUS - 220.0)
+	var from_middle: float = p.pos.length()
+	var edge: float = from_middle - (world.arena_r - 220.0)
 	if edge > 0.0:
 		dir = (dir - p.pos.normalized() * (0.6 + edge / 120.0)).normalized()
+
+	# Slide around asteroids instead of bumping into them.
+	var rock_pos: PackedVector2Array = world.rock_pos
+	var rock_r: PackedFloat32Array = world.rock_r
+	for k in rock_pos.size():
+		var to: Vector2 = p.pos - rock_pos[k]
+		var d := to.length()
+		var near: float = rock_r[k] + p.radius + 90.0
+		if d < near and d > 0.01:
+			var away := to / d
+			if dir.dot(away) < 0.3:
+				var side := away.orthogonal()
+				if side.dot(dir) < 0.0:
+					side = -side
+				dir = (dir + away * (1.5 - d / near) + side * 0.8).normalized()
+
+	# Keep out of the black hole.
+	if world.map.hole and from_middle < 430.0 and from_middle > 0.01:
+		dir = (dir + p.pos / from_middle * (2.7 - 2.5 * from_middle / 430.0)).normalized()
 	p.steer = dir
 
 

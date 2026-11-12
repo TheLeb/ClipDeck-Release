@@ -15,6 +15,8 @@ config/icon="res://icon.svg"
 
 Ads="*res://scripts/ad_manager.gd"
 Sfx="*res://scripts/sfx.gd"
+Profile="*res://scripts/profile.gd"
+Store="*res://scripts/store.gd"
 
 [display]
 
